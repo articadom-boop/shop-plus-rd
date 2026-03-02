@@ -1,9 +1,11 @@
+import { useState } from "react";
 import {
   DollarSign, ShoppingBag, Package, Users, FileText, Hash,
   TrendingUp, Eye, Printer, XCircle
 } from "lucide-react";
 import { KPICard, StatusBadge, PageHeader, DataTableShell } from "@/components/ui-custom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { toast } from "sonner";
 
 const chartData = [
   { mes: "Ene", ventas: 245000 },
@@ -29,6 +31,8 @@ const recentSales = [
 ];
 
 const Dashboard = () => {
+  const [chartMode, setChartMode] = useState<"mensual" | "semanal">("mensual");
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Panel de Control" description="Resumen general de tu negocio" />
@@ -90,8 +94,26 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">Resumen anual de ventas</p>
           </div>
           <div className="flex gap-2">
-            <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground">Mensual</button>
-            <button className="px-3 py-1.5 text-xs font-medium rounded-lg bg-secondary text-secondary-foreground">Semanal</button>
+            <button
+              onClick={() => setChartMode("mensual")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg ${
+                chartMode === "mensual"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              Mensual
+            </button>
+            <button
+              onClick={() => setChartMode("semanal")}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg ${
+                chartMode === "semanal"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground"
+              }`}
+            >
+              Semanal
+            </button>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={300}>
@@ -138,13 +160,25 @@ const Dashboard = () => {
                   <td className="py-3 px-5 text-center"><StatusBadge status={sale.estado} /></td>
                   <td className="py-3 px-5">
                     <div className="flex items-center justify-center gap-1">
-                      <button className="p-1.5 rounded-md hover:bg-secondary transition-colors" title="Ver">
+                      <button
+                        onClick={() => toast.info(`Viendo detalle de ${sale.ncf}`)}
+                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                        title="Ver"
+                      >
                         <Eye className="h-4 w-4 text-muted-foreground" />
                       </button>
-                      <button className="p-1.5 rounded-md hover:bg-secondary transition-colors" title="Imprimir">
+                      <button
+                        onClick={() => toast.success(`Impresión enviada para ${sale.ncf}`)}
+                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                        title="Imprimir"
+                      >
                         <Printer className="h-4 w-4 text-muted-foreground" />
                       </button>
-                      <button className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors" title="Anular">
+                      <button
+                        onClick={() => toast.warning(`Venta ${sale.ncf} marcada para anulación`)}
+                        className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+                        title="Anular"
+                      >
                         <XCircle className="h-4 w-4 text-destructive" />
                       </button>
                     </div>

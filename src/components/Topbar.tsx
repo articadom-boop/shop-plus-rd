@@ -1,4 +1,5 @@
 import { Bell, Building2, ChevronDown, Search, User } from "lucide-react";
+import { toast } from "sonner";
 
 export function Topbar() {
   return (
@@ -18,14 +19,20 @@ export function Topbar() {
       {/* Right section */}
       <div className="flex items-center gap-4">
         {/* Branch selector */}
-        <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors">
+        <button
+          onClick={() => toast.info("Selector de sucursal abierto")}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm font-medium text-foreground hover:bg-muted transition-colors"
+        >
           <Building2 className="h-4 w-4 text-primary" />
           <span>Sucursal Principal</span>
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </button>
 
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+        <button
+          onClick={() => toast.info("No tienes notificaciones nuevas")}
+          className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <Bell className="h-5 w-5 text-muted-foreground" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-destructive rounded-full" />
         </button>

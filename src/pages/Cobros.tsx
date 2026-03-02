@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Search, Plus, Filter, DollarSign, Calendar, User, CheckCircle, Clock, AlertCircle, Eye, Receipt, PhoneCall } from "lucide-react";
 import { PageHeader, DataTableShell, StatusBadge, KPICard } from "@/components/ui-custom";
+import { toast } from "sonner";
 
 const cuentasPorCobrar = [
   { id: 1, cliente: "María García", rnc: "001-0067890-1", factura: "B0100000045", fechaVenta: "15/02/2026", vencimiento: "17/03/2026", total: 15200, abonado: 5000, balance: 10200, estado: "pendiente" as const, diasVencido: 0 },
@@ -22,6 +23,9 @@ const Cobros = () => {
   const [tab, setTab] = useState<"cuentas" | "pagos">("cuentas");
   const [showAbonoModal, setShowAbonoModal] = useState(false);
   const [selectedCuenta, setSelectedCuenta] = useState<typeof cuentasPorCobrar[0] | null>(null);
+  const [abonoMonto, setAbonoMonto] = useState("");
+  const [abonoMetodo, setAbonoMetodo] = useState("Efectivo");
+  const [abonoNota, setAbonoNota] = useState("");
 
   const totalPorCobrar = cuentasPorCobrar.reduce((s, c) => s + c.balance, 0);
   const totalVencido = cuentasPorCobrar.filter(c => c.diasVencido > 0).reduce((s, c) => s + c.balance, 0);
@@ -31,12 +35,45 @@ const Cobros = () => {
   const handleAbono = (cuenta: typeof cuentasPorCobrar[0]) => {
     setSelectedCuenta(cuenta);
     setShowAbonoModal(true);
+    setAbonoMonto("");
+    setAbonoMetodo("Efectivo");
+    setAbonoNota("");
+  };
+
+  const handleRegisterPayment = () => {
+    if (!selectedCuenta) return;
+
+    const monto = Number(abonoMonto);
+    if (Number.isNaN(monto) || monto <= 0) {
+      toast.error("Ingresa un monto válido");
+      return;
+    }
+
+    if (monto > selectedCuenta.balance) {
+      toast.error("El monto no puede exceder el balance pendiente");
+      return;
+    }
+
+    setShowAbonoModal(false);
+    toast.success(`Abono de RD$ ${monto.toLocaleString()} registrado para ${selectedCuenta.cliente}`);
+  };
+
+  const handleOpenFirstPending = () => {
+    const pending = cuentasPorCobrar.find((cuenta) => cuenta.balance > 0);
+    if (!pending) {
+      toast.info("No hay cuentas pendientes para registrar pago");
+      return;
+    }
+    handleAbono(pending);
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Cobros" description="Gestión de cuentas por cobrar y pagos de clientes">
-        <button className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors">
+        <button
+          onClick={handleOpenFirstPending}
+          className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors"
+        >
           <Plus className="h-4 w-4" /> Registrar Pago
         </button>
       </PageHeader>
@@ -140,10 +177,18 @@ const Cobros = () => {
                               Abonar
                             </button>
                           )}
-                          <button className="p-1.5 rounded-md hover:bg-secondary transition-colors" title="Ver detalle">
+                          <button
+                            onClick={() => toast.info(`Detalle de factura ${cuenta.factura} (${cuenta.cliente})`)}
+                            className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                            title="Ver detalle"
+                          >
                             <Eye className="h-4 w-4 text-muted-foreground" />
                           </button>
-                          <button className="p-1.5 rounded-md hover:bg-secondary transition-colors" title="Contactar">
+                          <button
+                            onClick={() => toast.info(`Contacto enviado a ${cuenta.cliente}`)}
+                            className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                            title="Contactar"
+                          >
                             <PhoneCall className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </div>
@@ -186,7 +231,11 @@ const Cobros = () => {
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-secondary-foreground">{pago.metodo}</span>
                     </td>
                     <td className="py-3 px-5 text-center">
-                      <button className="p-1.5 rounded-md hover:bg-secondary transition-colors" title="Ver recibo">
+                      <button
+                        onClick={() => toast.info(`Mostrando recibo de la factura ${pago.factura}`)}
+                        className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                        title="Ver recibo"
+                      >
                         <Receipt className="h-4 w-4 text-muted-foreground" />
                       </button>
                     </td>
@@ -226,12 +275,18 @@ const Cobros = () => {
                 <input
                   type="number"
                   placeholder="0.00"
+                  value={abonoMonto}
+                  onChange={(e) => setAbonoMonto(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-secondary border-none text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Método de Pago</label>
-                <select className="w-full h-10 px-3 rounded-lg bg-secondary border-none text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <select
+                  value={abonoMetodo}
+                  onChange={(e) => setAbonoMetodo(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg bg-secondary border-none text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                >
                   <option>Efectivo</option>
                   <option>Transferencia</option>
                   <option>Cheque</option>
@@ -243,6 +298,8 @@ const Cobros = () => {
                 <input
                   type="text"
                   placeholder="Referencia o nota del pago..."
+                  value={abonoNota}
+                  onChange={(e) => setAbonoNota(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-secondary border-none text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
@@ -256,7 +313,7 @@ const Cobros = () => {
                 Cancelar
               </button>
               <button
-                onClick={() => setShowAbonoModal(false)}
+                onClick={handleRegisterPayment}
                 className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-accent transition-colors"
               >
                 Registrar Abono

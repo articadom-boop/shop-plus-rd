@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Receipt, Package, ShoppingCart, Users, Truck,
   BarChart3, Wallet, Landmark, Calculator, Building2, UserCog,
   Settings, LogOut, ChevronLeft, ChevronRight, Store, HandCoins
 } from "lucide-react";
+import { toast } from "sonner";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Panel", path: "/" },
@@ -26,6 +27,16 @@ const menuItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--app-sidebar-width", collapsed ? "68px" : "240px");
+  }, [collapsed]);
+
+  const handleLogout = () => {
+    navigate("/");
+    toast.success("Sesión cerrada");
+  };
 
   return (
     <aside
@@ -67,7 +78,10 @@ export function AppSidebar() {
 
       {/* Logout */}
       <div className="px-2 pb-3 border-t border-sidebar-border pt-3">
-        <button className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors w-full">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground transition-colors w-full"
+        >
           <LogOut className="h-5 w-5 flex-shrink-0" />
           {!collapsed && <span>Salir</span>}
         </button>

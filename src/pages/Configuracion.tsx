@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/ui-custom";
 import { Store, Globe, FileText, Bell, Palette, Database } from "lucide-react";
+import { toast } from "sonner";
 
 const sections = [
   { icon: Store, title: "Datos del Negocio", desc: "RNC, nombre comercial, dirección" },
@@ -10,22 +11,32 @@ const sections = [
   { icon: Database, title: "Respaldo", desc: "Backup y restauración de datos" },
 ];
 
-const Configuracion = () => (
-  <div className="space-y-6 animate-fade-in">
-    <PageHeader title="Configuración" description="Ajustes generales del sistema" />
+const Configuracion = () => {
+  const handleOpenSection = (section: string) => {
+    toast.info(`Sección "${section}" abierta`);
+  };
 
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {sections.map((s) => (
-        <button key={s.title} className="bg-card rounded-lg shadow-card p-6 hover:shadow-card-hover transition-all text-left group hover:ring-2 hover:ring-primary/20">
-          <div className="p-2.5 rounded-lg bg-primary/10 w-fit mb-4 group-hover:bg-primary/20 transition-colors">
-            <s.icon className="h-5 w-5 text-primary" />
-          </div>
-          <h3 className="font-semibold text-foreground mb-1">{s.title}</h3>
-          <p className="text-xs text-muted-foreground">{s.desc}</p>
-        </button>
-      ))}
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader title="Configuración" description="Ajustes generales del sistema" />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sections.map((s) => (
+          <button
+            key={s.title}
+            onClick={() => handleOpenSection(s.title)}
+            className="bg-card rounded-lg shadow-card p-6 hover:shadow-card-hover transition-all text-left group hover:ring-2 hover:ring-primary/20"
+          >
+            <div className="p-2.5 rounded-lg bg-primary/10 w-fit mb-4 group-hover:bg-primary/20 transition-colors">
+              <s.icon className="h-5 w-5 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-1">{s.title}</h3>
+            <p className="text-xs text-muted-foreground">{s.desc}</p>
+          </button>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default Configuracion;

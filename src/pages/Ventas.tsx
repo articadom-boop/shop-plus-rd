@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Search, Barcode, Plus, Minus, Trash2, CreditCard, X, Save, ShoppingBag, Clock } from "lucide-react";
 import { StatusBadge } from "@/components/ui-custom";
+import { toast } from "sonner";
 
 const products = [
   { id: 1, name: "Arroz Selecto 5lb", price: 285, stock: 45, category: "Alimentos", img: "🍚" },
@@ -27,6 +28,7 @@ const Ventas = () => {
   ]);
   const [comprobante, setComprobante] = useState("consumidor");
   const [searchTerm, setSearchTerm] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const itbis = subtotal * 0.18;
@@ -48,6 +50,51 @@ const Ventas = () => {
 
   const filtered = products.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
+  const handleQuickAdd = () => {
+    if (!filtered.length) {
+      toast.error("No hay productos para agregar");
+      return;
+    }
+    addToCart(filtered[0]);
+    toast.success(`${filtered[0].name} agregado al carrito`);
+  };
+
+  const handleScanner = () => {
+    searchInputRef.current?.focus();
+    toast.info("Escáner listo. Escribe o escanea el código de barras.");
+  };
+
+  const handleCheckout = (mode: "contado" | "credito") => {
+    if (!cart.length) {
+      toast.error("El carrito está vacío");
+      return;
+    }
+
+    toast.success(
+      mode === "contado"
+        ? `Venta cobrada por RD$ ${total.toFixed(2)}`
+        : `Venta guardada a crédito por RD$ ${total.toFixed(2)}`,
+    );
+    setCart([]);
+  };
+
+  const handleSavePending = () => {
+    if (!cart.length) {
+      toast.error("No hay productos para guardar");
+      return;
+    }
+    toast.success("Venta guardada como pendiente");
+  };
+
+  const handleCancelSale = () => {
+    if (!cart.length) {
+      toast.info("No hay venta activa para cancelar");
+      return;
+    }
+    setCart([]);
+    toast.info("Venta cancelada");
+  };
+
   return (
     <div className="h-[calc(100vh-7rem)] flex gap-4 animate-fade-in">
       {/* Products Section */}
@@ -57,6 +104,7 @@ const Ventas = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
+              ref={searchInputRef}
               type="text"
               placeholder="Buscar producto..."
               value={searchTerm}
@@ -64,10 +112,16 @@ const Ventas = () => {
               className="w-full h-10 pl-9 pr-4 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
-          <button className="h-10 px-4 rounded-lg bg-secondary text-foreground text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors">
+          <button
+            onClick={handleScanner}
+            className="h-10 px-4 rounded-lg bg-secondary text-foreground text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors"
+          >
             <Barcode className="h-4 w-4" /> Escáner
           </button>
-          <button className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors">
+          <button
+            onClick={handleQuickAdd}
+            className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors"
+          >
             <Plus className="h-4 w-4" /> Agregar
           </button>
         </div>
@@ -179,18 +233,30 @@ const Ventas = () => {
         {/* Action Buttons */}
         <div className="p-4 border-t border-border space-y-2">
           <div className="flex gap-2">
-            <button className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-accent transition-colors">
+            <button
+              onClick={() => handleCheckout("contado")}
+              className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-accent transition-colors"
+            >
               <CreditCard className="h-4 w-4" /> Cobrar
             </button>
-            <button className="flex-1 h-11 rounded-lg bg-success text-success-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+            <button
+              onClick={() => handleCheckout("credito")}
+              className="flex-1 h-11 rounded-lg bg-success text-success-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            >
               <Clock className="h-4 w-4" /> Crédito
             </button>
           </div>
           <div className="flex gap-2">
-            <button className="flex-1 h-9 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-muted transition-colors">
+            <button
+              onClick={handleSavePending}
+              className="flex-1 h-9 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-muted transition-colors"
+            >
               <Save className="h-3.5 w-3.5" /> Pendiente
             </button>
-            <button className="flex-1 h-9 rounded-lg bg-destructive/10 text-destructive text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-destructive/20 transition-colors">
+            <button
+              onClick={handleCancelSale}
+              className="flex-1 h-9 rounded-lg bg-destructive/10 text-destructive text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-destructive/20 transition-colors"
+            >
               <X className="h-3.5 w-3.5" /> Cancelar
             </button>
           </div>

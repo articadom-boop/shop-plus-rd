@@ -1,7 +1,11 @@
+import { useMemo, useState } from "react";
 import { Plus, Search, Filter, Download } from "lucide-react";
 import { PageHeader, StatusBadge, DataTableShell } from "@/components/ui-custom";
+import { toast } from "sonner";
+import { downloadCsv } from "@/lib/export";
+import { QuickCreateDialog } from "@/components/QuickCreateDialog";
 
-const inventario = [
+const initialInventario = [
   { id: 1, producto: "Arroz Selecto 5lb", codigo: "PRD-001", categoria: "Alimentos", stock: 45, precio: "RD$ 285.00", itbis: "18%", estado: "activo" as const },
   { id: 2, producto: "Aceite Crisol 1L", codigo: "PRD-002", categoria: "Alimentos", stock: 30, precio: "RD$ 320.00", itbis: "18%", estado: "activo" as const },
   { id: 3, producto: "Leche Milex 1L", codigo: "PRD-003", categoria: "Lácteos", stock: 5, precio: "RD$ 95.00", itbis: "0%", estado: "activo" as const },
@@ -13,13 +17,88 @@ const inventario = [
 ];
 
 const Inventario = () => {
+  const [inventario, setInventario] = useState(initialInventario);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [lowStockOnly, setLowStockOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+
+  const pageSize = 8;
+
+  const filteredItems = useMemo(() => {
+    return inventario.filter((item) => {
+      const matchesSearch =
+        item.producto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStock = !lowStockOnly || item.stock <= 5;
+      return matchesSearch && matchesStock;
+    });
+  }, [inventario, searchTerm, lowStockOnly]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, filteredItems.length);
+  const paginatedItems = filteredItems.slice(startIndex, endIndex);
+
+  const handleExport = () => {
+    if (!filteredItems.length) {
+      toast.error("No hay productos para exportar");
+      return;
+    }
+
+    downloadCsv("inventario.csv", filteredItems);
+    toast.success("Inventario exportado correctamente");
+  };
+
+  const handleCreateProduct = (values: Record<string, string>) => {
+    const producto = values.producto?.trim() ?? "";
+    const categoria = values.categoria?.trim() ?? "";
+    const precio = Number(values.precio);
+    const stock = Number(values.stock);
+    const itbis = values.itbis || "18%";
+
+    if (!producto || !categoria || Number.isNaN(precio) || Number.isNaN(stock)) {
+      toast.error("Completa los campos requeridos");
+      return;
+    }
+
+    const nextId = Math.max(0, ...inventario.map((item) => item.id)) + 1;
+    const codigo = `PRD-${String(nextId).padStart(3, "0")}`;
+
+    setInventario((prev) => [
+      {
+        id: nextId,
+        producto,
+        codigo,
+        categoria,
+        stock,
+        precio: `RD$ ${precio.toFixed(2)}`,
+        itbis,
+        estado: stock > 0 ? "activo" : "inactivo",
+      },
+      ...prev,
+    ]);
+
+    setShowNewProductModal(false);
+    setPage(1);
+    toast.success("Producto agregado correctamente");
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader title="Inventario" description="Gestión de productos y stock">
-        <button className="h-9 px-4 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors">
+        <button
+          onClick={handleExport}
+          className="h-9 px-4 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium flex items-center gap-2 hover:bg-muted transition-colors"
+        >
           <Download className="h-4 w-4" /> Exportar
         </button>
-        <button className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors">
+        <button
+          onClick={() => setShowNewProductModal(true)}
+          className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent transition-colors"
+        >
           <Plus className="h-4 w-4" /> Nuevo Producto
         </button>
       </PageHeader>
@@ -31,10 +110,25 @@ const Inventario = () => {
           <input
             type="text"
             placeholder="Buscar producto..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(1);
+            }}
             className="w-full h-9 pl-9 pr-4 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <button className="h-9 px-3 rounded-lg bg-card border border-border text-sm font-medium text-foreground flex items-center gap-2 hover:bg-secondary transition-colors">
+        <button
+          onClick={() => {
+            setLowStockOnly((prev) => !prev);
+            setPage(1);
+          }}
+          className={`h-9 px-3 rounded-lg border text-sm font-medium flex items-center gap-2 transition-colors ${
+            lowStockOnly
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card border-border text-foreground hover:bg-secondary"
+          }`}
+        >
           <Filter className="h-4 w-4" /> Filtrar
         </button>
       </div>
@@ -54,7 +148,7 @@ const Inventario = () => {
               </tr>
             </thead>
             <tbody>
-              {inventario.map((item) => (
+              {paginatedItems.map((item) => (
                 <tr key={item.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer">
                   <td className="py-3 px-5 font-medium text-foreground">{item.producto}</td>
                   <td className="py-3 px-5 font-mono text-xs text-muted-foreground">{item.codigo}</td>
@@ -74,14 +168,51 @@ const Inventario = () => {
         </div>
         {/* Pagination */}
         <div className="flex items-center justify-between px-5 py-3 border-t border-border">
-          <p className="text-sm text-muted-foreground">Mostrando 1-8 de 156 productos</p>
+          <p className="text-sm text-muted-foreground">
+            Mostrando {filteredItems.length ? startIndex + 1 : 0}-{endIndex} de {filteredItems.length} productos
+          </p>
           <div className="flex gap-1">
-            <button className="px-3 py-1.5 rounded-md text-xs font-medium bg-primary text-primary-foreground">1</button>
-            <button className="px-3 py-1.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground hover:bg-muted transition-colors">2</button>
-            <button className="px-3 py-1.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground hover:bg-muted transition-colors">3</button>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+              <button
+                key={pageNumber}
+                onClick={() => setPage(pageNumber)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  safePage === pageNumber
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-muted"
+                }`}
+              >
+                {pageNumber}
+              </button>
+            ))}
           </div>
         </div>
       </DataTableShell>
+
+      <QuickCreateDialog
+        open={showNewProductModal}
+        onOpenChange={setShowNewProductModal}
+        title="Nuevo producto"
+        description="Agrega un producto al inventario."
+        submitLabel="Guardar producto"
+        fields={[
+          { key: "producto", label: "Nombre del producto", placeholder: "Ej: Arroz Selecto 5lb", required: true },
+          { key: "categoria", label: "Categoría", placeholder: "Ej: Alimentos", required: true },
+          { key: "precio", label: "Precio", type: "number", placeholder: "0.00", required: true },
+          { key: "stock", label: "Stock", type: "number", placeholder: "0", required: true },
+          {
+            key: "itbis",
+            label: "ITBIS",
+            type: "select",
+            required: true,
+            options: [
+              { label: "18%", value: "18%" },
+              { label: "0%", value: "0%" },
+            ],
+          },
+        ]}
+        onSubmit={handleCreateProduct}
+      />
     </div>
   );
 };
