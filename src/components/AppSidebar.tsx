@@ -3,12 +3,13 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Receipt, Package, ShoppingCart, Users, Truck,
   BarChart3, Wallet, Landmark, Calculator, Building2, UserCog,
-  Settings, LogOut, ChevronLeft, ChevronRight, Store
+  Settings, LogOut, ChevronLeft, ChevronRight, Store, HandCoins
 } from "lucide-react";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Panel", path: "/" },
   { icon: Receipt, label: "Ventas", path: "/ventas" },
+  { icon: HandCoins, label: "Cobros", path: "/cobros" },
   { icon: Package, label: "Inventario", path: "/inventario" },
   { icon: ShoppingCart, label: "Compras", path: "/compras" },
   { icon: Users, label: "Clientes", path: "/clientes" },
