@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Barcode, Plus, Minus, Trash2, CreditCard, X, Save, ShoppingBag } from "lucide-react";
+import { Search, Barcode, Plus, Minus, Trash2, CreditCard, X, Save, ShoppingBag, Clock } from "lucide-react";
 import { StatusBadge } from "@/components/ui-custom";
 
 const products = [
@@ -178,9 +178,14 @@ const Ventas = () => {
 
         {/* Action Buttons */}
         <div className="p-4 border-t border-border space-y-2">
-          <button className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-accent transition-colors">
-            <CreditCard className="h-4 w-4" /> Cobrar
-          </button>
+          <div className="flex gap-2">
+            <button className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:bg-accent transition-colors">
+              <CreditCard className="h-4 w-4" /> Cobrar
+            </button>
+            <button className="flex-1 h-11 rounded-lg bg-success text-success-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+              <Clock className="h-4 w-4" /> Crédito
+            </button>
+          </div>
           <div className="flex gap-2">
             <button className="flex-1 h-9 rounded-lg bg-secondary text-secondary-foreground text-sm font-medium flex items-center justify-center gap-1.5 hover:bg-muted transition-colors">
               <Save className="h-3.5 w-3.5" /> Pendiente
